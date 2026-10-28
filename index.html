@@ -1,1 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MercadoInteligente - Protótipo</title>
+    <!-- Tailwind CSS para design moderno e responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Ícones FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
 
+    <!-- Header -->
+    <header class="bg-emerald-600 text-white shadow-md">
+        <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <i class="fa-solid fa-cart-shopping"></i> MercadoInteligente
+            </h1>
+            <span class="text-xs bg-emerald-700 px-2.5 py-1 rounded-full font-medium">Protótipo v1.0</span>
+        </div>
+    </header>
+
+    <!-- Container Principal (Mobile Viewport Style) -->
+    <main class="max-w-md mx-auto p-4 pb-24">
+
+        <!-- Abas de Navegação -->
+        <div class="flex bg-white rounded-xl shadow-sm p-1 mb-4 border border-gray-100">
+            <button onclick="switchTab('lista')" id="btn-lista" class="flex-1 py-2 text-sm font-semibold rounded-lg bg-emerald-600 text-white transition">Lista</button>
+            <button onclick="switchTab('escanear')" id="btn-escanear" class="flex-1 py-2 text-sm font-semibold rounded-lg text-gray-600 hover:bg-gray-100 transition">Escanear</button>
+            <button onclick="switchTab('cupom')" id="btn-cupom" class="flex-1 py-2 text-sm font-semibold rounded-lg text-gray-600 hover:bg-gray-100 transition">Cupom IA</button>
+            <button onclick="switchTab('comparativo')" id="btn-comparativo" class="flex-1 py-2 text-sm font-semibold rounded-lg text-gray-600 hover:bg-gray-100 transition">Preços</button>
+        </div>
+
+        <!-- ABA 1: LISTA DE COMPRAS -->
+        <section id="tab-lista" class="space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Adicionar à Lista</h2>
+                <div class="flex gap-2">
+                    <input type="text" id="novo-item" placeholder="Ex: Leite Integral 1L" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+                    <button onclick="adicionarItem()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition">Adicionar</button>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider">Sua Compra Atual</h2>
+                    <span id="contador-itens" class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">0 itens</span>
+                </div>
+                <div id="lista-compras" class="divide-y divide-gray-100">
+                    <!-- Itens inseridos dinamicamente via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA 2: ESCANEAMENTO DE BARRAS -->
+        <section id="tab-escanear" class="hidden space-y-4">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center">
+                <div class="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                    <i class="fa-solid fa-barcode"></i>
+                </div>
+                <h2 class="font-bold text-lg mb-1">Simulador de Câmera (EAN-13)</h2>
+                <p class="text-xs text-gray-500 mb-6">Escolha um produto para simular a leitura do código de barras na gôndola do supermercado:</p>
+                
+                <div class="space-y-2">
+                    <button onclick="simularEscaneamento('Leite Integral 1L', 5.49, 'Supermercado BomPreço')" class="w-full bg-gray-100 hover:bg-emerald-50 hover:border-emerald-300 border border-gray-200 p-3 rounded-lg text-left text-sm font-medium transition flex justify-between items-center">
+                        <span>🥛 Leite Integral 1L</span>
+                        <span class="text-emerald-600 font-bold">R$ 5,49</span>
+                    </button>
+                    <button onclick="simularEscaneamento('Café 500g', 18.90, 'Supermercado Extra')" class="w-full bg-gray-100 hover:bg-emerald-50 hover:border-emerald-300 border border-gray-200 p-3 rounded-lg text-left text-sm font-medium transition flex justify-between items-center">
+                        <span>☕ Café 500g</span>
+                        <span class="text-emerald-600 font-bold">R$ 18,90</span>
+                    </button>
+                    <button onclick="simularEscaneamento('Arroz 5kg', 24.50, 'Atacadão')" class="w-full bg-gray-100 hover:bg-emerald-50 hover:border-emerald-300 border border-gray-200 p-3 rounded-lg text-left text-sm font-medium transition flex justify-between items-center">
+                        <span>🍚 Arroz 5kg</span>
+                        <span class="text-emerald-600 font-bold">R$ 24,50</span>
+                    </button>
+                </div>
+            </div>
+            <div id="resultado-scan" class="hidden bg-emerald-50 border border-emerald-200 p-4 rounded-xl text-sm text-emerald-900"></div>
+        </section>
+
+        <!-- ABA 3: CUPOM FISCAL COM IA -->
+        <section id="tab-cupom" class="hidden space-y-4">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center">
+                <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <h2 class="font-bold text-lg mb-1">Processamento de Cupom via IA</h2>
+                <p class="text-xs text-gray-500 mb-6">Simule o envio da foto do cupom fiscal impresso para extração automática via Visão Computacional:</p>
+                
+                <button onclick="processarCupomIA()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-semibold text-sm transition shadow-sm">
+                    <i class="fa-solid fa-camera mr-2"></i> Enviar Foto do Cupom
+                </button>
+            </div>
+
+            <div id="loading-cupom" class="hidden text-center py-4">
+                <i class="fa-solid fa-spinner animate-spin text-indigo-600 text-2xl mb-2"></i>
+                <p class="text-xs text-gray-500">Gemini IA analisando o cupom fiscal...</p>
+            </div>
+
+            <div id="resultado-cupom" class="hidden bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-3">
+                <h3 class="font-bold text-sm text-gray-700 border-b pb-2">📦 Dados Extraídos do Cupom (JSON)</h3>
+                <div id="json-cupom" class="text-xs bg-gray-900 text-emerald-400 p-3 rounded-lg font-mono overflow-x-auto"></div>
+            </div>
+        </section>
+
+        <!-- ABA 4: COMPARATIVO DE PREÇOS -->
+        <section id="tab-comparativo" class="hidden space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Ranking de Onde Comprar</h2>
+                <p class="text-xs text-gray-500 mb-4">Com base na sua lista atual, veja onde fica mais barato:</p>
+                
+                <div class="space-y-3">
+                    <div class="p-3 border-2 border-emerald-500 bg-emerald-50/50 rounded-xl flex justify-between items-center">
+                        <div>
+                            <span class="text-xs bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold">Mais Barato</span>
+                            <h4 class="font-bold text-gray-800 mt-1">Supermercado Econômico</h4>
+                            <p class="text-xs text-gray-500">Economia estimada de R$ 12,30</p>
+                        </div>
+                        <span class="text-lg font-bold text-emerald-700">R$ 48,89</span>
+                    </div>
+
+                    <div class="p-3 border border-gray-200 rounded-xl flex justify-between items-center">
+                        <div>
+                            <h4 class="font-bold text-gray-800">Supermercado Vizinho</h4>
+                            <p class="text-xs text-gray-500">Distância: 1.2 km</p>
+                        </div>
+                        <span class="text-lg font-bold text-gray-700">R$ 61,19</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Lógica JavaScript -->
+    <script>
+        let itens = [
+            { nome: 'Leite Integral 1L', comprado: true, preco: 5.49 },
+            { nome: 'Café 500g', comprado: false, preco: 18.90 }
+        ];
+
+        function switchTab(tabId) {
+            ['lista', 'escanear', 'cupom', 'comparativo'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                document.getElementById(`btn-${t}`).className = "flex-1 py-2 text-sm font-semibold rounded-lg text-gray-600 hover:bg-gray-100 transition";
+            });
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            document.getElementById(`btn-${tabId}`).className = "flex-1 py-2 text-sm font-semibold rounded-lg bg-emerald-600 text-white transition";
+            if(tabId === 'lista') renderizarLista();
+        }
+
+        function renderizarLista() {
+            const container = document.getElementById('lista-compras');
+            container.innerHTML = '';
+            if(itens.length === 0) {
+                container.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">Sua lista está vazia.</p>';
+                document.getElementById('contador-itens').innerText = '0 itens';
+                return;
+            }
+
+            document.getElementById('contador-itens').innerText = `${itens.length} itens`;
+            itens.forEach((item, index) => {
+                container.innerHTML += `
+                    <div class="py-2.5 flex items-center justify-between">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" ${item.comprado ? 'checked' : ''} onclick="alternarItem(${index})" class="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500">
+                            <span class="text-sm ${item.comprado ? 'line-through text-gray-400' : 'text-gray-800'}">${item.nome}</span>
+                        </label>
+                        <span class="text-xs font-semibold text-gray-500">R$ ${item.preco.toFixed(2)}</span>
+                    </div>
+                `;
+            });
+        }
+
+        function adicionarItem() {
+            const input = document.getElementById('novo-item');
+            if(input.value.trim() === '') return;
+            itens.push({ nome: input.value, comprado: false, preco: 10.00 });
+            input.value = '';
+            renderizarLista();
+        }
+
+        function alternarItem(index) {
+            itens[index].comprado = !itens[index].comprado;
+            renderizarLista();
+        }
+
+        function simularEscaneamento(nome, preco, mercado) {
+            const res = document.getElementById('resultado-scan');
+            res.classList.res.remove('hidden');
+            res.innerHTML = `
+                <p class="font-bold mb-1">✅ Produto Identificado!</p>
+                <p><strong>${nome}</strong></p>
+                <p class="text-xs mt-1">Preço atual no <strong>${mercado}</strong>: <span class="font-bold text-emerald-700">R$ ${preco.toFixed(2)}</span></p>
+                <p class="text-xs text-emerald-700 mt-1">💡 <em>Preço 5% mais barato que a média histórica!</em></p>
+            `;
+            itens.push({ nome: nome, comprado: true, preco: preco });
+        }
+
+        function processarCupomIA() {
+            document.getElementById('loading-cupom').classList.remove('hidden');
+            document.getElementById('resultado-cupom').classList.add('hidden');
+            
+            setTimeout(() => {
+                document.getElementById('loading-cupom').classList.add('hidden');
+                document.getElementById('resultado-cupom').classList.remove('hidden');
+                
+                const dadosJSON = {
+                  "estabelecimento": "Supermercado Econômico S/A",
+                  "cnpj": "12.345.678/0001-90",
+                  "data": "2026-10-23",
+                  "itens": [
+                    {"produto": "Leite Integral 1L", "qtd": 2, "valor_unitario": 5.49},
+                    {"produto": "Café 500g", "qtd": 1, "valor_unitario": 18.90}
+                  ],
+                  "valor_total": 29.88
+                };
+                
+                document.getElementById('json-cupom').innerText = JSON.stringify(dadosJSON, null, 2);
+            }, 1500);
+        }
+
+        // Inicializar renderização
+        renderizarLista();
+    </script>
+</body>
+</html>
