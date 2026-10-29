@@ -1,7 +1,6 @@
-// Configuração opcional do Supabase para sincronização em nuvem.
-// Preencha com a URL do projeto e a chave pública anon/publishable.
-// Nunca coloque a chave service_role neste arquivo.
+// Configuração pública do frontend. Nunca coloque service_role, client_secret ou refresh token aqui.
 window.MI_CONFIG = {
   supabaseUrl: "",
-  supabaseAnonKey: ""
+  supabaseAnonKey: "",
+  googleClientId: ""
 };
