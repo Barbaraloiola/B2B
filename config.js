@@ -4,3 +4,8 @@ window.MI_CONFIG = {
   supabaseAnonKey: "",
   googleClientId: ""
 };
+window.MI_CONFIG = {
+  supabaseUrl: "https://tijbmlnpwkmccrreqznq.supabase.co",
+  supabaseAnonKey: "sb_publishable_orJEfdUVBT7JpdqTGDdsjQ_QtBJXDTP",
+  googleClientId: ""
+};
