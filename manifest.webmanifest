@@ -1,0 +1,12 @@
+{
+  "name": "MercadoInteligente",
+  "short_name": "MercadoInteligente",
+  "description": "Lista inteligente e histórico de compras",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f8f5",
+  "theme_color": "#176b52",
+  "icons": []
+}
