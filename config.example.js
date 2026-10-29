@@ -1,6 +1,7 @@
-// Copie este arquivo para config.js e preencha com os dados públicos do seu projeto Supabase.
-// Não coloque service_role keys, senhas ou segredos no navegador.
+// Copie para config.js e preencha os identificadores públicos dos seus projetos.
+// Não coloque service_role, Google client_secret ou refresh token no navegador.
 window.MI_CONFIG = {
   supabaseUrl: "",
-  supabaseAnonKey: ""
+  supabaseAnonKey: "",
+  googleClientId: "SEU_CLIENT_ID.apps.googleusercontent.com"
 };
