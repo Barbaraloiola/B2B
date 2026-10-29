@@ -31,9 +31,21 @@ $('receipt-file').addEventListener('change',e=>{const file=e.target.files?.[0];i
 $('remove-receipt').addEventListener('click',()=>{if(receiptUrl)URL.revokeObjectURL(receiptUrl);receiptUrl=null;$('receipt-file').value='';$('receipt-preview').removeAttribute('src');$('receipt-wrap').classList.add('hidden')});
 function accountUI(){$('cloud-not-configured').classList.toggle('hidden',CLOUD_READY);$('account-form').classList.toggle('hidden',!CLOUD_READY);$('account-button').textContent=session?'Conta conectada':'Conectar nuvem';$('sign-in').classList.toggle('hidden',Boolean(session));$('sign-up').classList.toggle('hidden',Boolean(session));$('sign-out').classList.toggle('hidden',!session);$('account-message').textContent=session?'Conectado como '+session.user.email+'.':''}
 $('account-button').addEventListener('click',()=>{$('account-modal').classList.remove('hidden');accountUI()});$('close-account').addEventListener('click',()=>$('account-modal').classList.add('hidden'));$('account-modal').addEventListener('click',e=>{if(e.target.id==='account-modal')e.currentTarget.classList.add('hidden')});
-async function syncCloud(){if(!db||!session)return;status('Sincronizando…');const {error}=await db.from('user_app_data').upsert({user_id:session.user.id,payload:state,updated_at:new Date().toISOString()},{onConflict:'user_id'});if(error){status('Falha na nuvem');toast('Dados locais preservados; sincronização falhou.');console.error(error)}else status('Nuvem sincronizada')}
+async function syncCloud(){if(!db||!session)return;status('Sincronizando…');const {error}=await db.from('user_app_data').upsert({user_id:session.user.id,payload:state,updated_at:new Date().toISOString()},{onConflict:'user_id'});if(error){status('Falha na nuvem');toast('Dados locais preservados; sincronização falhou.');console.error(error)}else { status('Nuvem sincronizada'); window.MI_DRIVE_BACKUP?.backupIfConnected(); }}
 async function loadCloud(){if(!db||!session)return;status('Carregando nuvem…');const {data,error}=await db.from('user_app_data').select('payload').eq('user_id',session.user.id).maybeSingle();if(error){status('Falha na nuvem');toast('Não foi possível carregar dados da nuvem.');console.error(error);return}if(data?.payload&&Array.isArray(data.payload.items)&&Array.isArray(data.payload.purchases)){state=data.payload;localStorage.setItem(KEY,JSON.stringify(state));render()}else await syncCloud();status('Nuvem sincronizada')}
 async function auth(signUp){if(!db)return;const email=$('account-email').value.trim(),password=$('account-password').value;if(!email||password.length<8){toast('Informe e-mail e senha com ao menos 8 caracteres.');return}$('account-message').textContent='Processando…';const {data,error}=signUp?await db.auth.signUp({email,password}):await db.auth.signInWithPassword({email,password});if(error){$('account-message').textContent=error.message;return}if(signUp&&!data.session){$('account-message').textContent='Conta criada. Confirme o e-mail antes de entrar.';return}session=data.session;accountUI();if(session)await loadCloud()}
 $('sign-in').addEventListener('click',()=>auth(false));$('sign-up').addEventListener('click',()=>auth(true));$('sign-out').addEventListener('click',async()=>{await db.auth.signOut();session=null;accountUI();status('Salvo neste dispositivo');toast('Você saiu da conta.')});
 if(CLOUD_READY){try{db=createClient(CFG.supabaseUrl,CFG.supabaseAnonKey);const {data}=await db.auth.getSession();session=data.session;accountUI();if(session)await loadCloud();db.auth.onAuthStateChange((_event,s)=>{session=s;setTimeout(()=>{accountUI();if(session)loadCloud();else status('Salvo neste dispositivo')},0)})}catch(err){console.error(err);status('Nuvem indisponível');accountUI()}}else accountUI();
+window.MI_BACKUP = {
+  getState: () => JSON.parse(JSON.stringify(state)),
+  replaceState: async next => {
+    if (!next || !Array.isArray(next.items) || !Array.isArray(next.purchases)) throw new Error("Arquivo de backup inválido.");
+    state = { items: next.items, purchases: next.purchases };
+    localStorage.setItem(KEY, JSON.stringify(state));
+    render();
+    if (session && db) await syncCloud();
+    else status("Restaurado neste dispositivo");
+  }
+};
+await import("./drive-backup.js");
 render();
