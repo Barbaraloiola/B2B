@@ -34,23 +34,42 @@ function digits(v){return String(v||'').replace(/\D/g,'')}
 function validKey(v){const k=digits(v);if(k.length!==44)return false;let s=0,w=2;for(let i=42;i>=0;i--){s+=Number(k[i])*w;w=w===9?2:w+1}const m=s%11,d=(m===0||m===1)?0:11-m;return d===Number(k[43])}
 function keyStatus(){const k=digits($('receipt-key').value).slice(0,44);$('receipt-key').value=k;$('receipt-key-status').textContent=!k?'Ainda não identificada.':k.length!==44?'Chave incompleta: '+k.length+'/44 dígitos.':validKey(k)?'Dígito verificador consistente; isso não confirma autenticidade fiscal.':'Dígito verificador inválido. Confira a leitura.'}
 async function script(src,name){if(window[name])return;await new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>no(new Error('Falha ao carregar biblioteca. Verifique sua conexão.'));document.head.appendChild(s)})}
+async function optimizeReceiptImage(file){
+  // Reduz fotos de alta resolução antes de qualquer leitura para evitar estouro de memória.
+  const maxSide=1400;
+  let bmp;
+  try{
+    bmp=await createImageBitmap(file,{resizeWidth:maxSide,resizeHeight:maxSide,resizeQuality:'medium'});
+  }catch(e){
+    bmp=await createImageBitmap(file);
+  }
+  try{
+    const scale=Math.min(1,maxSide/Math.max(bmp.width,bmp.height));
+    const w=Math.max(1,Math.round(bmp.width*scale)),h=Math.max(1,Math.round(bmp.height*scale));
+    const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+    const ctx=canvas.getContext('2d',{alpha:false});
+    if(!ctx)throw new Error('Não foi possível preparar a imagem neste dispositivo.');
+    ctx.drawImage(bmp,0,0,w,h);
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.82));
+    canvas.width=canvas.height=1;
+    if(!blob)throw new Error('Não foi possível reduzir a foto.');
+    return blob;
+  }finally{bmp.close?.()}
+}
 async function qrRead(file){
   const bmp=await createImageBitmap(file);
-  if('BarcodeDetector'in window){try{const r=await new BarcodeDetector({formats:['qr_code']}).detect(bmp);if(r.length)return r[0].rawValue}catch(e){}}
-  await script('https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js','jsQR');
-  for(const largura of [1200,900,1600,600]){
-    const esc=Math.min(1,largura/bmp.width),w=Math.round(bmp.width*esc),h=Math.round(bmp.height*esc);
-    const c=document.createElement('canvas');c.width=w;c.height=h;
-    const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(bmp,0,0,w,h);
-    const original=ctx.getImageData(0,0,w,h);
-    let code=window.jsQR(original.data,w,h,{inversionAttempts:'attemptBoth'});if(code)return code.data;
-    for(const limiar of [110,140,170]){
-      const out=ctx.createImageData(w,h),d=original.data;
-      for(let i=0;i<d.length;i+=4){const g=.299*d[i]+.587*d[i+1]+.114*d[i+2],v=g<limiar?0:255;out.data[i]=out.data[i+1]=out.data[i+2]=v;out.data[i+3]=255}
-      code=window.jsQR(out.data,w,h,{inversionAttempts:'attemptBoth'});if(code)return code.data;
-    }
-  }
-  return '';
+  try{
+    if('BarcodeDetector'in window){try{const r=await new BarcodeDetector({formats:['qr_code']}).detect(bmp);if(r.length)return r[0].rawValue}catch(e){}}
+    await script('https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js','jsQR');
+    const w=bmp.width,h=bmp.height,canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+    const ctx=canvas.getContext('2d',{willReadFrequently:true,alpha:false});
+    if(!ctx)throw new Error('Não foi possível preparar a leitura do QR Code.');
+    ctx.drawImage(bmp,0,0,w,h);
+    const image=ctx.getImageData(0,0,w,h);
+    const code=window.jsQR(image.data,w,h,{inversionAttempts:'dontInvert'});
+    canvas.width=canvas.height=1;
+    return code?.data||'';
+  }finally{bmp.close?.()}
 }
 const UF_NFC={11:'RO',12:'AC',13:'AM',14:'RR',15:'PA',16:'AP',17:'TO',21:'MA',22:'PI',23:'CE',24:'RN',25:'PB',26:'PE',27:'AL',28:'SE',29:'BA',31:'MG',32:'ES',33:'RJ',35:'SP',41:'PR',42:'SC',43:'RS',50:'MS',51:'MT',52:'GO',53:'DF'};
 function extractAccessKey(raw){const text=String(raw||'');const match=text.match(/(?:[?&]p=|chNFe=)(\d{44})/i)||text.match(/(?:^|\D)(\d{44})(?:\D|$)/);return match?match[1]:null}
@@ -59,10 +78,45 @@ async function lookupIssuer(cnpj){if(!/^\d{14}$/.test(cnpj))return null;try{cons
 function addReceiptRow(v={name:'',qty:1,price:''}){receiptRows.push({id:uid(),...v});drawReceiptRows()}
 function drawReceiptRows(){const root=$('receipt-items');root.innerHTML=receiptRows.map(r=>'<div class="historyrow" data-r="'+r.id+'" style="align-items:end;flex-wrap:wrap"><div style="flex:2;min-width:140px"><label class="label">Produto</label><input class="field rn" value="'+esc(r.name)+'" placeholder="Descrição"></div><div style="width:80px"><label class="label">Qtd.</label><input class="field rq" type="number" min=".001" step=".001" value="'+esc(r.qty)+'"></div><div style="width:110px"><label class="label">Preço unit. (R$)</label><input class="field rp" type="number" min="0" step=".01" value="'+esc(r.price)+'"></div><button class="btn quiet rx" type="button">✕</button></div>').join('');root.querySelectorAll('[data-r]').forEach(el=>{const r=receiptRows.find(x=>x.id===el.dataset.r);el.querySelector('.rn').oninput=e=>r.name=e.target.value;el.querySelector('.rq').oninput=e=>{r.qty=e.target.value;receiptCheck()};el.querySelector('.rp').oninput=e=>{r.price=e.target.value;receiptCheck()};el.querySelector('.rx').onclick=()=>{receiptRows=receiptRows.filter(x=>x!==r);drawReceiptRows()}});receiptCheck()}
 function receiptCheck(){const sum=receiptRows.reduce((s,r)=>s+(Number(r.qty)||0)*(Number(r.price)||0),0),t=Number($('receipt-total').value);$('receipt-total-check').textContent=t>0?'Soma dos itens: '+brl(sum)+' · Total do cupom: '+brl(t)+' · '+(Math.abs(sum-t)<=.02?'Valores conferem.':'Confira a diferença, descontos e acréscimos.'):'Informe total e preços para conferir.'}
-async function readReceipt(){if(!receiptFile)return;const b=$('read-receipt');b.disabled=true;try{receiptStatus('Lendo QR Code…');const raw=await qrRead(receiptFile);$('receipt-qr').value=raw;const key=extractAccessKey(raw);if(key)$('receipt-key').value=key;keyStatus();
-    if(key){const decoded=decodeAccessKey(key);if(decoded?.valid){receiptStatus('QR Code identificado. Consultando cadastro do emitente pelo CNPJ…');const issuer=await lookupIssuer(decoded.cnpj);if(issuer?.name){$('receipt-store').value=issuer.name;receiptStatus('Estabelecimento identificado pelo CNPJ. A data completa, os itens e os tributos ainda dependem da consulta da NFC-e.')}else{receiptStatus('Chave identificada, mas não foi possível consultar o cadastro do emitente.')}}else{receiptStatus('A chave lida não passou na validação. Confira o QR Code.')}}
-    receiptStatus('Carregando OCR em português…');await script('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js','Tesseract');const worker=await Tesseract.createWorker('por',1,{logger:m=>{if(m.status==='recognizing text')receiptStatus('Reconhecendo texto… '+Math.round((m.progress||0)*100)+'%')}});try{const text=(await worker.recognize(receiptFile)).data.text||'';$('receipt-ocr').value=text;const date=text.match(/(\d{2})[\\/.-](\d{2})[\\/.-](\d{4})/);if(date&&!$('receipt-date').value)$('receipt-date').value=date[3]+'-'+date[2]+'-'+date[1];const lines=text.split(/\r?\n/);for(let i=lines.length-1;i>=0;i--){if(/total|valor a pagar|valor total/i.test(lines[i])){const ns=lines[i].match(/\d+[,.]\d{2}/g);if(ns?.length&&!$('receipt-total').value)$('receipt-total').value=Number(ns.at(-1).replace(/\./g,'').replace(',','.')).toFixed(2);break}}/* Nome do estabelecimento nunca é inferido pela primeira linha do OCR. */}finally{await worker.terminate()}receiptStatus($('receipt-store').value?'Leitura concluída. Estabelecimento identificado pelo CNPJ. A data exata, os produtos e tributos ainda dependem da consulta fiscal.':'Leitura concluída. O estabelecimento não foi confirmado pelo CNPJ; não preenchemos dados por suposição.');receiptCheck()}catch(e){console.error(e);receiptStatus('Não foi possível ler: '+e.message)}finally{b.disabled=false}}
-$('receipt-file').addEventListener('change',e=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){toast('Escolha uma imagem.');return}receiptFile=file;if(receiptUrl)URL.revokeObjectURL(receiptUrl);receiptUrl=URL.createObjectURL(file);$('receipt-preview').src=receiptUrl;$('receipt-name').textContent=file.name+' · '+Math.round(file.size/1024)+' KB';$('receipt-wrap').classList.remove('hidden');receiptStatus('Imagem pronta para leitura.')});
+async function readReceipt(){
+  if(!receiptFile)return;
+  const b=$('read-receipt');if(b.disabled)return;b.disabled=true;
+  let worker=null,optimized=null;
+  try{
+    receiptStatus('Preparando foto em tamanho reduzido…');
+    optimized=await optimizeReceiptImage(receiptFile);
+    receiptStatus('Lendo QR Code…');
+    const raw=await qrRead(optimized);$('receipt-qr').value=raw;
+    const key=extractAccessKey(raw);if(key)$('receipt-key').value=key;keyStatus();
+    if(key){
+      const decoded=decodeAccessKey(key);
+      if(decoded?.valid){
+        receiptStatus('QR Code identificado. Consultando cadastro do emitente…');
+        const issuer=await lookupIssuer(decoded.cnpj);
+        if(issuer?.name)$('receipt-store').value=issuer.name;
+      }else receiptStatus('A chave lida não passou na validação. Confira o QR Code.');
+    }
+    receiptStatus('Carregando OCR em português…');
+    await script('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js','Tesseract');
+    worker=await Tesseract.createWorker('por',1,{logger:m=>{if(m.status==='recognizing text')receiptStatus('Reconhecendo texto… '+Math.round((m.progress||0)*100)+'%')}});
+    const text=(await worker.recognize(optimized)).data.text||'';$('receipt-ocr').value=text;
+    const date=text.match(/(\\d{2})[\\/.-](\\d{2})[\\/.-](\\d{4})/);
+    if(date&&!$('receipt-date').value)$('receipt-date').value=date[3]+'-'+date[2]+'-'+date[1];
+    const lines=text.split(/\\r?\\n/);
+    for(let i=lines.length-1;i>=0;i--){if(/total|valor a pagar|valor total/i.test(lines[i])){const ns=lines[i].match(/\\d+[,.]\\d{2}/g);if(ns?.length&&!$('receipt-total').value)$('receipt-total').value=Number(ns.at(-1).replace(/\\./g,'').replace(',','.')).toFixed(2);break}}
+    receiptStatus($('receipt-store').value?'Leitura concluída. Revise os dados identificados.':'Leitura concluída. Revise e preencha os dados que não foram identificados.');
+    receiptCheck();
+  }catch(e){
+    console.error(e);
+    const msg=/memory|memória|alloc|allocation/i.test(String(e?.message||e))?'A foto é grande demais para a memória disponível. Escolha uma foto menor ou tire outra com resolução reduzida.':'Não foi possível concluir a leitura: '+(e?.message||'erro inesperado');
+    receiptStatus(msg);
+  }finally{
+    if(worker){try{await worker.terminate()}catch(e){}}
+    optimized=null;
+    b.disabled=false;
+  }
+}
+$('receipt-file').addEventListener('change',e=>{const input=e.currentTarget,file=input.files?.[0];input.value='';if(!file)return;if(!file.type.startsWith('image/')){toast('Escolha uma imagem.');return}receiptFile=file;if(receiptUrl)URL.revokeObjectURL(receiptUrl);receiptUrl=URL.createObjectURL(file);$('receipt-preview').src=receiptUrl;$('receipt-name').textContent=file.name+' · '+Math.round(file.size/1024)+' KB';$('receipt-wrap').classList.remove('hidden');$('read-receipt').disabled=false;receiptStatus('Imagem pronta. A foto será reduzida antes da leitura para economizar memória.')});
 $('read-receipt').addEventListener('click',readReceipt);
 function receiptConsultationUrl(){
   const raw=$('receipt-qr').value.trim();
