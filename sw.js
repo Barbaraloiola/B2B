@@ -1,4 +1,4 @@
-const CACHE = 'mercado-inteligente-v10';
+const CACHE = 'mercado-inteligente-v11';
 const CORE = ['./','./index.html','./app.js','./drive-backup.js','./config.js','./manifest.webmanifest'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting()));
