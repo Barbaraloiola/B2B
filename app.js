@@ -39,7 +39,7 @@ async function optimizeReceiptImage(file){
   const maxSide=1400;
   let bmp;
   try{
-    bmp=await createImageBitmap(file,{resizeWidth:maxSide,resizeHeight:maxSide,resizeQuality:'medium'});
+    bmp=await createImageBitmap(file,{resizeWidth:maxSide,resizeQuality:'medium'});
   }catch(e){
     bmp=await createImageBitmap(file);
   }
