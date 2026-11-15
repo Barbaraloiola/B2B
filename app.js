@@ -1,3 +1,5 @@
+(async function mercadoInteligenteBoot(){
+'use strict';
 const CFG = window.MI_CONFIG || {};
 const CLOUD_READY = Boolean(CFG.supabaseUrl && CFG.supabaseAnonKey && !String(CFG.supabaseUrl).includes('SEU_PROJETO') && !String(CFG.supabaseAnonKey).includes('SUA_CHAVE'));
 const KEY = 'mercadoInteligente.v02';
@@ -160,3 +162,5 @@ window.MI_BACKUP = {
 };
 try{await import("./drive-backup.js")}catch(err){console.error("Backup do Google Drive indisponível:",err)}
 render();
+
+})().catch(error=>{console.error('Falha ao iniciar MercadoInteligente:',error);const status=document.getElementById('sync-status');if(status)status.textContent='Erro ao iniciar. Atualize a página.';const toast=document.getElementById('toast');if(toast){toast.textContent='O aplicativo encontrou um erro ao iniciar. Recarregue a página.';toast.classList.remove('hidden');}});
