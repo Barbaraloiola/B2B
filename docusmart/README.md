@@ -1,13 +1,37 @@
-# DocuSmart — protótipo de comprovantes
+# DocuSmart — organizador de documentos (PWA)
 
-## Fluxo escolhido
-1. No Android, compartilhar imagem ou PDF pelo menu do WhatsApp para DocuSmart (Web Share Target da PWA).
-2. O Service Worker recebe o POST multipart e guarda o arquivo em uma fila local de pendências.
-3. O usuário revisa nome, valor, data e categoria; a pasta é apenas sugerida.
-4. O arquivo só passa para o arquivo local após clicar em **Confirmar arquivamento**.
+O DocuSmart é um projeto independente dentro de `docusmart/` no repositório B2B. Não compartilha a interface nem os dados do MercadoInteligente.
 
-## Publicação e teste
-Publicar esta pasta em HTTPS. Abrir a URL /docusmart/ no Chrome Android, instalar a PWA e depois compartilhar uma imagem/PDF no WhatsApp selecionando DocuSmart. O alvo de compartilhamento depende de suporte do navegador e da instalação da PWA. iOS precisará de integração nativa complementar.
+## Importação
+- Compartilhamento de imagens e PDFs pelo WhatsApp por meio do Web Share Target da PWA instalada.
+- Seleção de vários arquivos e imagens da galeria.
+- Varredura de uma pasta escolhida pelo usuário, incluindo subpastas, nos navegadores que oferecem File System Access API.
+- Deduplicação básica por nome, tamanho e data de modificação.
 
-## Limitações
-OCR experimental apenas em imagens, via Tesseract.js CDN; PDF é recebido, mas ainda sem extração de texto. O OCR não comprova que uma transferência ocorreu. Armazenamento é apenas IndexedDB local, sem login, nuvem, criptografia, backup ou sincronização. Não usar para documentos sensíveis. Próximas etapas: OCR PDF, deduplicação, Supabase Storage privado, autenticação/RLS, validação no servidor, backup, exclusão e testes Android/iOS.
+## Classificação e arquivamento
+- OCR experimental em imagens com Tesseract.js (português).
+- Sugestão de categoria, estabelecimento, valor e data; os campos devem ser revisados.
+- Nome de arquivo editável antes do arquivamento e opção de renomear itens já arquivados.
+- Extensão original preservada.
+- Quando o usuário autoriza acesso de leitura/gravação a uma pasta, uma cópia é gravada em `DocuSmart_Arquivados/Categoria/Estabelecimento/Ano/Mês`.
+- Sem uma pasta autorizada, os arquivos ficam no IndexedDB do navegador.
+
+## Limitações importantes
+- O navegador não pode examinar silenciosamente toda a galeria ou todas as pastas do Android. O usuário seleciona os arquivos ou concede acesso a uma pasta específica.
+- A varredura é iniciada pelo usuário; não é um serviço permanente em segundo plano.
+- A disponibilidade de seleção de pastas varia conforme navegador e sistema. Se `showDirectoryPicker` não existir, use a seleção múltipla de arquivos.
+- A integração WhatsApp exige publicação HTTPS, instalação da PWA e suporte do navegador ao Web Share Target.
+- iOS pode exigir uma integração nativa complementar.
+- OCR de PDF ainda não implementado; o PDF é recebido e arquivado, mas os campos precisam ser preenchidos/revisados manualmente.
+- A classificação automática é uma sugestão, não uma validação documental.
+- Ainda não há conta, sincronização em nuvem, criptografia ponta a ponta ou backup remoto. O IndexedDB é local ao navegador/dispositivo e pode ser apagado pelo sistema.
+
+## Teste
+1. Publique `/docusmart/` em HTTPS.
+2. Abra no Chrome Android e instale a PWA.
+3. Teste o compartilhamento de uma imagem/PDF pelo WhatsApp.
+4. Teste seleção múltipla da galeria.
+5. Em navegador compatível, selecione uma pasta de teste com cópias de documentos e confira a criação da pasta `DocuSmart_Arquivados`.
+6. Teste renomear antes e depois do arquivamento.
+
+Não use documentos confidenciais em produção antes de implementar autenticação, armazenamento protegido, backup e testes de segurança.
