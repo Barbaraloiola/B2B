@@ -1,1 +1,34 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#183b35"><title>DocuSmart</title><link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./styles.css"></head><body><header><div class="brand"><span class="mark">D</span><div><b>DocuSmart</b><small>Documentos organizados</small></div></div><span class="tag">Protótipo</span></header><main><section class="intro"><p class="eyebrow">COMPROVANTES INTELIGENTES</p><h1>Seus comprovantes, no lugar certo.</h1><p>Compartilhe um arquivo pelo WhatsApp. O DocuSmart lê as informações disponíveis, sugere uma pasta e aguarda sua confirmação.</p></section><section class="panel"><div class="heading"><div><h2>Adicionar comprovante</h2><p>Use Compartilhar no WhatsApp ou selecione um arquivo.</p></div><span>01</span></div><label class="drop" for="fileInput"><b>＋</b><strong>Selecionar imagem ou PDF</strong><small>JPG, PNG ou PDF · até 15 MB</small></label><input id="fileInput" type="file" accept="image/*,application/pdf" hidden><p id="notice" class="notice" role="status">Aguardando comprovante.</p></section><section id="review" class="panel hidden"><div class="heading"><div><h2>Revisar antes de arquivar</h2><p>Confira os dados e a pasta sugerida.</p></div><span>02</span></div><div id="fileInfo" class="fileinfo"></div><form id="reviewForm"><div class="fields"><label>Nome / estabelecimento<input id="person" placeholder="Ex.: Clínica Dentária"></label><label>Valor<input id="amount" placeholder="Ex.: 150,00"></label><label>Data<input id="date" type="date"></label><label>Categoria<select id="category"><option>Comprovantes</option><option>Contas pagas</option><option>Saúde</option><option>Serviços</option><option>Outros</option></select></label></div><div class="suggestion"><small>PASTA SUGERIDA</small><b id="folder">Comprovantes / A classificar / Ano / Mês</b><span>Você pode alterar os campos antes de confirmar.</span></div><div class="actions"><button type="button" class="secondary" id="cancel">Cancelar</button><button class="primary">Confirmar arquivamento</button></div></form></section><section class="panel"><div class="heading"><div><h2>Arquivados neste dispositivo</h2><p>Arquivos salvos localmente neste navegador.</p></div><span>03</span></div><div id="archive"><p class="empty">Nenhum comprovante arquivado ainda.</p></div></section><p class="privacy">Privacidade: protótipo local, sem login ou sincronização em nuvem. Não utilize ainda para documentos confidenciais.</p></main><footer>DocuSmart · Em desenvolvimento</footer><script src="./app.js"></script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#183b35"><title>DocuSmart</title>
+<link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<header><div class="brand"><span class="mark">D</span><div><b>DocuSmart</b><small>Organização inteligente de arquivos</small></div></div><span class="tag">Beta</span></header>
+<main>
+<section class="intro"><p class="eyebrow">SEU ARQUIVO DIGITAL</p><h1>Seus documentos, organizados no lugar certo.</h1><p>Receba arquivos do WhatsApp, selecione itens da galeria ou examine uma pasta autorizada. Revise a classificação e o nome antes de arquivar.</p></section>
+<section class="panel"><div class="heading"><div><h2>Adicionar arquivos</h2><p>Escolha como deseja importar documentos.</p></div><span>01</span></div>
+<div class="import-grid">
+<label class="drop" for="fileInput"><b>＋</b><strong>Selecionar arquivos</strong><small>Galeria, imagens e PDFs · múltiplos arquivos</small></label>
+<button type="button" class="drop drop-button" id="scanFolder"><b>▤</b><strong>Examinar uma pasta</strong><small>Selecionar pasta e verificar arquivos e subpastas</small></button>
+</div>
+<input id="fileInput" type="file" accept="image/*,application/pdf" multiple hidden>
+<p id="folderStatus" class="notice">Nenhuma pasta selecionada.</p>
+<p id="notice" class="notice" role="status">Aguardando arquivos. Você também pode compartilhar pelo WhatsApp.</p></section>
+<section id="review" class="panel hidden"><div class="heading"><div><h2>Revisar arquivo</h2><p>Confira a classificação, o nome e o destino sugeridos.</p></div><span>02</span></div>
+<div id="fileInfo" class="fileinfo"></div>
+<form id="reviewForm"><div class="fields">
+<label>Nome / estabelecimento<input id="person" placeholder="Ex.: Clínica Dentária"></label>
+<label>Nome do arquivo<input id="newName" placeholder="Ex.: comprovante-pagamento"></label>
+<label>Valor (quando aplicável)<input id="amount" placeholder="Ex.: 150,00"></label>
+<label>Data<input id="date" type="date"></label>
+<label>Categoria<select id="category"><option>Comprovantes</option><option>Contas pagas</option><option>Saúde</option><option>Documentos pessoais</option><option>Trabalho</option><option>Imóveis</option><option>Veículos</option><option>Estudos</option><option>Serviços</option><option>Outros</option></select></label>
+</div>
+<div class="suggestion"><small>DESTINO SUGERIDO</small><b id="folder">Comprovantes / A classificar / Ano / Mês</b><span>O destino pode ser ajustado antes da confirmação.</span></div>
+<div class="actions"><button type="button" class="secondary" id="cancel">Cancelar</button><button class="primary">Confirmar e arquivar</button></div></form></section>
+<section class="panel"><div class="heading"><div><h2>Arquivos organizados</h2><p>Documentos guardados neste dispositivo.</p></div><span>03</span></div><div id="archive"><p class="empty">Nenhum arquivo arquivado ainda.</p></div></section>
+<p class="privacy">Privacidade: nesta versão, os arquivos são processados localmente no navegador. A cópia para uma pasta escolhida depende da permissão concedida. Não há monitoramento irrestrito ou contínuo da galeria.</p>
+</main><footer>DocuSmart · Em desenvolvimento</footer><script src="./app.js"></script>
+</body></html>
